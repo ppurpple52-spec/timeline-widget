@@ -100,6 +100,9 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);padding:12px;min-heigh
 
 <script>
 const PROXY='https://notion-proxy.minjudy55.workers.dev';
+const SAVED_API_KEY='여기에_API키_붙여넣기';
+const SAVED_DB_ID='여기에_DB아이디_붙여넣기';
+const SAVED_DATE_PROP='날짜';
 const MONTHS_EN=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DAYS=['S','M','T','W','T','F','S'];
 const THEMES=[
@@ -211,9 +214,9 @@ function changeMonth(dir){
   month+=dir;if(month>11){month=0;year++;}if(month<0){month=11;year--;}render();
 }
 async function fetchNotion(){
-  const apiKey=document.getElementById('apiKey').value.trim();
-  const dbId=document.getElementById('dbId').value.trim().replace(/-/g,'');
-  const dateProp=document.getElementById('dateProp').value.trim()||'날짜';
+  const apiKey=document.getElementById('apiKey').value.trim()||SAVED_API_KEY;
+  const dbId=(document.getElementById('dbId').value.trim()||SAVED_DB_ID).replace(/-/g,'');
+  const dateProp=document.getElementById('dateProp').value.trim()||SAVED_DATE_PROP;
   const status=document.getElementById('fetchStatus');
   if(!apiKey||!dbId){status.textContent='API 키와 DB ID를 입력해 주세요.';return;}
   status.textContent='불러오는 중...';
@@ -252,6 +255,7 @@ async function fetchNotion(){
 }
 applyTheme(0);
 renderThemeGrid();
+if(SAVED_API_KEY && SAVED_DB_ID) fetchNotion();
 render();
 </script>
 </body>
