@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Music Player</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: transparent;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 12px;
+    min-height: 100vh;
+  }
+
+  :root {
+    --lv-50:  #F3F2FF;
+    --lv-100: #E4E2FB;
+    --lv-200: #CECBF6;
+    --lv-400: #7F77DD;
+    --lv-600: #534AB7;
+    --lv-800: #3C3489;
+  }
+
+  .player-card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--lv-50);
+    border: 1.5px solid var(--lv-200);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  /* ── 상단 바 ── */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px 8px;
+    border-bottom: 1px solid var(--lv-200);
+  }
+  .top-left {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--lv-600);
+    cursor: pointer;
+    user-select: none;
+  }
+  .menu-icon { display: flex; flex-direction: column; gap: 3px; }
+  .menu-icon span { display: block; width: 14px; height: 1.5px; background: var(--lv-600); border-radius: 2px; }
+  .top-right { display: flex; align-items: center; gap: 8px; }
+  .badge {
+    background: var(--lv-100);
+    color: var(--lv-600);
+    border: 1px solid var(--lv-200);
+    border-radius: 20px;
+    padding: 2px 9px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .badge:hover { background: var(--lv-200); }
+  .shuffle-icon svg { display: block; }
+
+  /* ── 메인 트랙 영역 ── */
+  .main-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    gap: 12px;
+  }
+  .thumb {
+    width: 52px; height: 52px;
+    border-radius: 8px;
+    background: var(--lv-200);
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: none; }
+  .thumb-ph { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+
+  .track-info { flex: 1; min-width: 0; }
+  .track-title {
+    font-size: 14px; font-weight: 600;
+    color: var(--lv-800);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .track-artist {
+    font-size: 12px; color: var(--lv-400);
+    margin-top: 2px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* ── 컨트롤 버튼 ── */
+  .controls { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .ctrl-btn {
+    width: 30px; height: 30px;
+    border-radius: 50%; border: none;
+    background: transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s; padding: 0;
+  }
+  .ctrl-btn:hover { background: var(--lv-200); }
+  .ctrl-btn.play-btn {
+    background: var(--lv-200);
+    width: 34px; height: 34px;
+  }
+  .ctrl-btn.play-btn:hover { background: var(--lv-400); }
+  .ctrl-btn.play-btn:hover svg path,
+  .ctrl-btn.play-btn:hover svg rect { fill: white; }
+
+  /* ── 임베드 영역 ── */
+  .embed-wrap { display: none; border-top: 1px solid var(--lv-200); }
+  .embed-wrap.active { display: block; }
+  .embed-wrap iframe { width: 100%; height: 80px; border: none; display: block; }
+
+  /* ── URL 입력 ── */
+  .input-row { display: flex; border-top: 1px solid var(--lv-200); }
+  .url-input {
+    flex: 1; font-size: 12px;
+    padding: 9px 12px;
+    border: none; background: transparent;
+    color: var(--lv-800); outline: none;
+  }
+  .url-input::placeholder { color: var(--lv-400); }
+  .go-btn {
+    padding: 9px 14px; font-size: 12px; font-weight: 600;
+    border: none; border-left: 1px solid var(--lv-200);
+    background: transparent; color: var(--lv-600);
+    cursor: pointer; transition: background 0.15s;
+  }
+  .go-btn:hover { background: var(--lv-100); }
+
+  /* ── 프리셋 버튼 ── */
+  .presets-row {
+    display: flex; flex-wrap: wrap; gap: 6px;
+    padding: 8px 14px 10px;
+    border-top: 1px solid var(--lv-200);
+  }
+  .ps-btn {
+    font-size: 10px; padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--lv-200);
+    background: transparent; color: var(--lv-600);
+    cursor: pointer; transition: all 0.12s;
+  }
+  .ps-btn:hover { background: var(--lv-200); }
+  .ps-btn.active { background: var(--lv-400); color: white; border-color: var(--lv-400); }
+</style>
+</head>
+<body>
+
+<div class="player-card">
+
+  <!-- 상단 바 -->
+  <div class="top-bar">
+    <div class="top-left">
+      <div class="menu-icon"><span></span><span></span><span></span></div>
+      <span>List</span>
+    </div>
+    <div class="top-right">
+      <div class="badge" id="listBadge">LIST</div>
+      <div class="shuffle-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M18 4l-6 6-6-6" stroke="#7F77DD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M6 20l6-6 6 6" stroke="#7F77DD" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- 트랙 정보 + 컨트롤 -->
+  <div class="main-row">
+    <div class="thumb" id="thumb">
+      <div class="thumb-ph" id="thumbPh">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="9" stroke="#AFA9EC" stroke-width="1.5"/>
+          <circle cx="12" cy="12" r="3.5" fill="#AFA9EC"/>
+          <circle cx="12" cy="12" r="1.4" fill="#F3F2FF"/>
+        </svg>
+      </div>
+      <img id="thumbImg" src="" alt="" />
+    </div>
+
+    <div class="track-info">
+      <div class="track-title" id="trackTitle">곡을 선택해주세요</div>
+      <div class="track-artist" id="trackArtist">URL을 입력하거나 아래 버튼을 눌러보세요</div>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl-btn" id="prevBtn" title="이전">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M19 5L9 12l10 7V5z" fill="#7F77DD"/>
+          <rect x="5" y="5" width="2.5" height="14" rx="1.2" fill="#7F77DD"/>
+        </svg>
+      </button>
+      <button class="ctrl-btn play-btn" id="playBtn" title="재생/일시정지">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" id="playIcon">
+          <path d="M8 5l11 7-11 7V5z" fill="#534AB7"/>
+        </svg>
+      </button>
+      <button class="ctrl-btn" id="nextBtn" title="다음">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M5 5l10 7-10 7V5z" fill="#7F77DD"/>
+          <rect x="16.5" y="5" width="2.5" height="14" rx="1.2" fill="#7F77DD"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- YouTube 임베드 -->
+  <div class="embed-wrap" id="embedWrap">
+    <iframe id="ytFrame" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+  </div>
+
+  <!-- URL 입력 -->
+  <div class="input-row">
+    <input class="url-input" id="urlInput" type="text" placeholder="YouTube / YouTube Music URL 붙여넣기..." />
+    <button class="go-btn" id="goBtn">재생</button>
+  </div>
+
+  <!-- 프리셋 -->
+  <div class="presets-row" id="presetsRow">
+    <button class="ps-btn" data-key="lofi">Lo-Fi</button>
+    <button class="ps-btn" data-key="kpop">K-Pop</button>
+    <button class="ps-btn" data-key="jazz">Jazz</button>
+    <button class="ps-btn" data-key="study">Study</button>
+    <button class="ps-btn" data-key="indie">Indie</button>
+    <button class="ps-btn" data-key="classical">Classical</button>
+  </div>
+
+</div>
+
+<script>
+const presets = {
+  lofi:      { id: 'jfKfPfyJRdk', title: 'lofi hip hop radio',   artist: 'Lofi Girl',       list: false },
+  kpop:      { id: 'PLRBp0Ze2a0', title: 'K-Pop Mix',             artist: 'Various Artists', list: true  },
+  jazz:      { id: 'Dx5qFachd3A', title: 'Smooth Jazz Cafe',      artist: 'Jazz Vibes',      list: false },
+  study:     { id: '5qap5aO4i9A', title: 'Study Music',           artist: 'Alpha Waves',     list: false },
+  indie:     { id: 'HoRkntoHkIE', title: 'Indie Folk Mix',        artist: 'Various Artists', list: false },
+  classical: { id: 'jgpJVI3tDbY', title: 'Classical Piano Radio', artist: 'Peaceful Piano',  list: false }
+};
+
+let playing = false;
+let currentId = null;
+let isPlaylist = false;
+
+function extractId(url) {
+  url = url.trim();
+  let m;
+  m = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if (m) return { id: m[1], list: false };
+  m = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if (m) return { id: m[1], list: false };
+  m = url.match(/music\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/);
+  if (m) return { id: m[1], list: false };
+  m = url.match(/[?&]list=([a-zA-Z0-9_-]+)/);
+  if (m) return { id: m[1], list: true };
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return { id: url, list: false };
+  return null;
+}
+
+function buildEmbed(id, list) {
+  const base = list
+    ? `https://www.youtube.com/embed/videoseries?list=${id}`
+    : `https://www.youtube.com/embed/${id}`;
+  return base + '?autoplay=1&rel=0&enablejsapi=1';
+}
+
+function setTrack(title, artist, videoId, isList) {
+  document.getElementById('trackTitle').textContent = title;
+  document.getElementById('trackArtist').textContent = artist;
+  const img = document.getElementById('thumbImg');
+  const ph  = document.getElementById('thumbPh');
+  if (videoId && !isList) {
+    img.src = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+    img.onload = () => { img.style.display = 'block'; ph.style.display = 'none'; };
+    img.onerror = () => { img.style.display = 'none'; ph.style.display = 'flex'; };
+  } else {
+    img.style.display = 'none';
+    ph.style.display = 'flex';
+  }
+}
+
+function loadTrack(id, title, artist, isList) {
+  currentId = id;
+  isPlaylist = isList;
+  setTrack(title, artist, id, isList);
+  document.getElementById('ytFrame').src = buildEmbed(id, isList);
+  document.getElementById('embedWrap').classList.add('active');
+  playing = true;
+  updatePlayIcon();
+}
+
+function updatePlayIcon() {
+  const icon = document.getElementById('playIcon');
+  icon.innerHTML = playing
+    ? '<rect x="6" y="5" width="4" height="14" rx="1.5" fill="#534AB7"/><rect x="14" y="5" width="4" height="14" rx="1.5" fill="#534AB7"/>'
+    : '<path d="M8 5l11 7-11 7V5z" fill="#534AB7"/>';
+}
+
+document.getElementById('goBtn').addEventListener('click', () => {
+  const val = document.getElementById('urlInput').value;
+  const parsed = extractId(val);
+  if (!parsed) return;
+  document.querySelectorAll('.ps-btn').forEach(b => b.classList.remove('active'));
+  loadTrack(parsed.id, parsed.list ? '플레이리스트 재생 중' : '재생 중', '', parsed.list);
+});
+
+document.getElementById('urlInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('goBtn').click();
+});
+
+document.getElementById('playBtn').addEventListener('click', () => {
+  if (!currentId) {
+    document.querySelector('[data-key="lofi"]').click();
+    return;
+  }
+  playing = !playing;
+  updatePlayIcon();
+  const fn = playing ? 'playVideo' : 'pauseVideo';
+  document.getElementById('ytFrame').contentWindow.postMessage(
+    JSON.stringify({ event: 'command', func: fn, args: [] }), '*'
+  );
+});
+
+document.querySelectorAll('.ps-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.ps-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const p = presets[btn.dataset.key];
+    document.getElementById('urlInput').value = '';
+    loadTrack(p.id, p.title, p.artist, p.list);
+  });
+});
+</script>
+</body>
+</html>
